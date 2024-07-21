@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "netlify dev",
-    "build": "netlify build",
+    "build": "netlify functions:build --src lambda/*",
     "preview": "vite preview"
   },
   "devDependencies": {

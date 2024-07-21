@@ -21,7 +21,9 @@ export const handler: Handler = async (event, context) => {
 
     const teleClient = new Telegram(apiKey)
     const prompt = JSON.parse(event.body || '')
-    await processTelePrompt(teleClient, prompt)
+    const httpResponse = await processTelePrompt(teleClient, prompt)
+
+    return httpResponse
   }
 
   return {
@@ -34,12 +36,21 @@ export const handler: Handler = async (event, context) => {
 
 async function processTelePrompt(client: Telegram, prompt: TeleUpdate) {
   try {
-    if (prompt.message) await processTeleMsg(client, prompt.message)
+    if (prompt.message) return await processTeleMsg(client, prompt.message)
     else if (prompt.callback_query)
-      await processTeleCallback(client, prompt.callback_query)
+      return await processTeleCallback(client, prompt.callback_query)
   } catch (e) {
-    await processTeleError(client, prompt, e as TeleError)
+    const errorMsg = await processTeleError(client, prompt, e as TeleError)
     console.log(e)
+
+    return errorMsg
+  }
+
+  return {
+    statusCode: 400,
+    body: JSON.stringify({
+      message: `Request fell through.`,
+    }),
   }
 }
 
@@ -48,13 +59,27 @@ async function processTeleMsg(client: Telegram, message: TeleMessage) {
   const ADMIN_ID = Netlify.env.get('ADMIN_ID') || ''
 
   await client.sendMessage(ADMIN_ID, testMessage)
-  return client.sendMessage(ADMIN_ID, message.text || 'undefined')
+  await client.sendMessage(ADMIN_ID, message.text || 'undefined')
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      message: `Tele Message processed.`,
+    }),
+  }
 }
 
 async function processTeleCallback(
   client: Telegram,
   message: TeleCallbackQuery,
-) {}
+) {
+  return {
+    statusCode: 500,
+    body: JSON.stringify({
+      message: `Callbacks unsupported.`,
+    }),
+  }
+}
 
 export async function processTeleError(
   teleClient: Telegram,
@@ -66,4 +91,11 @@ export async function processTeleError(
   await teleClient.sendMessage(ADMIN_ID, `<b>Error encountered</b>:`)
   await teleClient.sendMessage(ADMIN_ID, JSON.stringify(prompt))
   await teleClient.sendMessage(ADMIN_ID, `${errorMsg.description}`)
+
+  return {
+    statusCode: 500,
+    body: JSON.stringify({
+      message: `Internal Server Error`,
+    }),
+  }
 }
