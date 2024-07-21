@@ -1,0 +1,6 @@
+[build]
+  build = "npm run build"
+  functions = "lambda"
+
+[dev]
+targetPort = 4173

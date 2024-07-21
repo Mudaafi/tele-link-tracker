@@ -4,14 +4,21 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "dev": "netlify dev",
+    "build": "netlify build",
     "preview": "vite preview"
   },
   "devDependencies": {
     "@netlify/functions": "^2.8.1",
+    "eslint": "^9.7.0",
+    "eslint-plugin-prettier": "^5.2.1",
     "netlify-cli": "^17.33.4",
-    "typescript": "^5.2.2",
+    "prettier": "^3.3.3",
+    "typescript": "^4.9.5",
     "vite": "^5.3.4"
+  },
+  "dependencies": {
+    "@types/node": "^20.14.11",
+    "telegram-interface": "^0.1.6"
   }
 }
