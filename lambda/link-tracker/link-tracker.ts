@@ -9,9 +9,9 @@ import {
 
 export const handler: Handler = async (event, context) => {
   if (event.httpMethod == 'POST') {
-    const apiKey = Netlify.env.get('BOT_TOKEN')
+    const botKey = process.env.BOT_TOKEN
 
-    if (!apiKey)
+    if (!botKey)
       return {
         statusCode: 500,
         body: JSON.stringify({
@@ -19,8 +19,8 @@ export const handler: Handler = async (event, context) => {
         }),
       }
 
-    const teleClient = new Telegram(apiKey)
-    const prompt = JSON.parse(event.body || '')
+    const teleClient = new Telegram(botKey)
+    const prompt = JSON.parse(event.body || '{}')
     const httpResponse = await processTelePrompt(teleClient, prompt)
 
     return httpResponse
@@ -56,7 +56,7 @@ async function processTelePrompt(client: Telegram, prompt: TeleUpdate) {
 
 async function processTeleMsg(client: Telegram, message: TeleMessage) {
   const testMessage = '<b>New Message</b>\nHello World'
-  const ADMIN_ID = Netlify.env.get('ADMIN_ID') || ''
+  const ADMIN_ID = process.env.ADMIN_ID || ''
 
   await client.sendMessage(ADMIN_ID, testMessage)
   await client.sendMessage(ADMIN_ID, message.text || 'undefined')
