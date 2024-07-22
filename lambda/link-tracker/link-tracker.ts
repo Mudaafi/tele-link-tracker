@@ -4,8 +4,18 @@ import {
   TeleCallbackQuery,
   TeleError,
   TeleMessage,
+  TeleMessageEntities,
   TeleUpdate,
 } from 'telegram-interface/lib/@types/telegram-types'
+import { embedMetadata } from 'telegram-interface/lib/telegram-formatters'
+import {
+  appendToSheet,
+  getLastRowIndex,
+  getRowIndexFromResult,
+} from './lib/gsheet-interface'
+
+const GSHEET_ID = '169qZKbEAb5rMeyEHNNjA0fGxs0-atTEF60PDDT8U1gY'
+const SHEET_NAME = 'Links Tracked'
 
 export const handler: Handler = async (event, context) => {
   if (event.httpMethod == 'POST') {
@@ -29,7 +39,7 @@ export const handler: Handler = async (event, context) => {
   return {
     statusCode: 400,
     body: JSON.stringify({
-      message: `Request fell through.`,
+      message: `Request fell through`,
     }),
   }
 }
@@ -55,18 +65,55 @@ async function processTelePrompt(client: Telegram, prompt: TeleUpdate) {
 }
 
 async function processTeleMsg(client: Telegram, message: TeleMessage) {
-  const testMessage = '<b>New Message</b>\nHello World'
   const ADMIN_ID = process.env.ADMIN_ID || ''
+  const senderId = message.from?.id
 
-  await client.sendMessage(ADMIN_ID, testMessage)
-  await client.sendMessage(ADMIN_ID, message.text || 'undefined')
+  if (senderId && senderId !== ADMIN_ID) {
+    await client.sendMessage(
+      senderId,
+      "Sorry, this bot hasn't been enabled for non-premium users",
+    )
+  } else if (senderId === ADMIN_ID) {
+    const urlArr =
+      message.entities?.filter((entity) => entity.type === 'url') || []
+
+    if (urlArr?.length > 0) {
+      // Is a url, store it
+      await urlFlow(client, message, urlArr)
+    }
+  }
 
   return {
     statusCode: 200,
     body: JSON.stringify({
-      message: `Tele Message processed.`,
+      message: `Tele Message processed`,
     }),
   }
+}
+
+async function urlFlow(
+  client: Telegram,
+  message: TeleMessage,
+  urlEntityArr: Array<TeleMessageEntities>,
+) {
+  if (!message.from?.id) return
+
+  const urlArr = urlEntityArr
+    .map((entity) => {
+      return message.text?.slice(entity.offset, entity.offset + entity.length)
+    })
+    .filter((url) => url !== null && url !== undefined)
+
+  let msg = `URLs stored in sheet: ???`
+  urlArr.forEach((url) => (msg += `\n  - ${url}`))
+  msg += '\n\nReply to this message to set a description for the links stored'
+  msg = embedMetadata([], msg)
+
+  let lastRowIndex = await getLastRowIndex(GSHEET_ID, SHEET_NAME)
+  const rowsToAppend = urlArr.map((url) => [lastRowIndex++, url])
+
+  await appendToSheet(rowsToAppend, 'A:B', GSHEET_ID, SHEET_NAME)
+  return client.sendMessage(message.from?.id, msg)
 }
 
 async function processTeleCallback(
@@ -76,7 +123,7 @@ async function processTeleCallback(
   return {
     statusCode: 500,
     body: JSON.stringify({
-      message: `Callbacks unsupported.`,
+      message: `Callbacks are unsupported`,
     }),
   }
 }

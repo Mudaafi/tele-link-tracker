@@ -25,6 +25,7 @@ dist-ssr
 
 # Customs
 .env
+*_key*
 # Local Netlify folder
 .netlify
 *.zip
