@@ -66,7 +66,7 @@ async function processTelePrompt(client: Telegram, prompt: TeleUpdate) {
 
 async function processTeleMsg(client: Telegram, message: TeleMessage) {
   const ADMIN_ID = process.env.ADMIN_ID || ''
-  const senderId = message.from?.id
+  const senderId = message.from?.id.toString()
 
   if (senderId && senderId !== ADMIN_ID) {
     await client.sendMessage(
