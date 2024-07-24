@@ -152,7 +152,7 @@ async function urlFlow(
   msg += '\n\nReply to this message to set a description for the links stored'
 
   let lastRowIndex = await getLastRowIndex(GSHEET_ID, SHEET_NAME)
-  const rowsToAppend = urlArr.map((url) => [lastRowIndex++, url])
+  const rowsToAppend = urlArr.map((url) => [++lastRowIndex, url]) // +1 before set
   const rowIndexes = rowsToAppend.map((row) => row[0])
   msg = embedMetadata(rowIndexes, msg)
 
