@@ -105,12 +105,13 @@ async function replyFlow(
   const msgText = message.text
   const msgEntities = message.entities
   const reply = message.reply_to_message
+  const replyText = reply.text
 
-  if (!msgText || !msgEntities) return
-  const meta = extractMetadata(msgText, msgEntities) || []
+  if (!msgText || !replyText || !msgEntities) return
+  const meta = extractMetadata(replyText, msgEntities) || []
   const descriptions = msgText.split('\n-').map((d) => d.trim())
 
-  meta.forEach(async (rowIndex: number, i: number) => {
+  await meta.forEach(async (rowIndex: number, i: number) => {
     await writeRow(`C${rowIndex}`, [descriptions[i]], GSHEET_ID, SHEET_NAME)
   })
 
