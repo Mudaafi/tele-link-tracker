@@ -34,10 +34,20 @@ export const handler: Handler = async (event, context) => {
       }
 
     const teleClient = new Telegram(botKey)
-    const prompt = JSON.parse(event.body || '{}')
-    const httpResponse = await processTelePrompt(teleClient, prompt)
+    try {
+      const prompt = JSON.parse(event.body || '{}')
+      const httpResponse = await processTelePrompt(teleClient, prompt)
 
-    return httpResponse
+      return httpResponse
+    } catch (err) {
+      console.log(err)
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          message: `Internal Server Error`,
+        }),
+      }
+    }
   }
 
   return {
@@ -103,12 +113,12 @@ async function replyFlow(
   message: TeleMessage & { reply_to_message: TeleMessage },
 ) {
   const msgText = message.text
-  const msgEntities = message.entities
   const reply = message.reply_to_message
+  const replyEntities = reply.entities
   const replyText = reply.text
 
-  if (!msgText || !replyText || !msgEntities) return
-  const meta = extractMetadata(replyText, msgEntities) || []
+  if (!msgText || !replyText || !replyEntities) return
+  const meta = extractMetadata(replyText, replyEntities) || []
   const descriptions = msgText.split('\n-').map((d) => d.trim())
 
   await meta.forEach(async (rowIndex: number, i: number) => {
