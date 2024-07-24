@@ -20,6 +20,6 @@
   "dependencies": {
     "@types/node": "^20.14.11",
     "googleapis": "^140.0.1",
-    "telegram-interface": "^0.1.7"
+    "telegram-interface": "0.1.8"
   }
 }

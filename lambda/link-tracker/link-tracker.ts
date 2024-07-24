@@ -82,6 +82,7 @@ async function processTeleMsg(client: Telegram, message: TeleMessage) {
       message.entities?.filter((entity) => entity.type === 'url') || []
 
     if (hasReply(message)) {
+      // Is a reply, try to add description to it
       await replyFlow(client, message)
     } else if (urlArr?.length > 0) {
       // Is a url, store it
@@ -109,12 +110,16 @@ async function replyFlow(
   const meta = extractMetadata(msgText, msgEntities) || []
   const descriptions = msgText.split('\n-').map((d) => d.trim())
 
-  meta.forEach(async (rowIndex, i) => {
+  meta.forEach(async (rowIndex: number, i: number) => {
     await writeRow(`C${rowIndex}`, [descriptions[i]], GSHEET_ID, SHEET_NAME)
   })
 
   await client.setMessageReaction(reply.chat.id, reply.message_id, [
-    { type: 'emoji', reaction: '🫡' },
+    { type: 'emoji', emoji: '✍' },
+  ])
+
+  await client.setMessageReaction(message.chat.id, message.message_id, [
+    { type: 'emoji', emoji: '🫡' },
   ])
 }
 
