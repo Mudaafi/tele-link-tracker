@@ -7,11 +7,15 @@ import {
   TeleMessageEntities,
   TeleUpdate,
 } from 'telegram-interface/lib/@types/telegram-types'
-import { embedMetadata } from 'telegram-interface/lib/telegram-formatters'
+import {
+  embedMetadata,
+  extractMetadata,
+} from 'telegram-interface/lib/telegram-formatters'
 import {
   appendToSheet,
   getLastRowIndex,
   getRowIndexFromResult,
+  writeRow,
 } from './lib/gsheet-interface'
 
 const GSHEET_ID = '169qZKbEAb5rMeyEHNNjA0fGxs0-atTEF60PDDT8U1gY'
@@ -77,7 +81,9 @@ async function processTeleMsg(client: Telegram, message: TeleMessage) {
     const urlArr =
       message.entities?.filter((entity) => entity.type === 'url') || []
 
-    if (urlArr?.length > 0) {
+    if (hasReply(message)) {
+      await replyFlow(client, message)
+    } else if (urlArr?.length > 0) {
       // Is a url, store it
       await urlFlow(client, message, urlArr)
     }
@@ -89,6 +95,27 @@ async function processTeleMsg(client: Telegram, message: TeleMessage) {
       message: `Tele Message processed`,
     }),
   }
+}
+
+async function replyFlow(
+  client: Telegram,
+  message: TeleMessage & { reply_to_message: TeleMessage },
+) {
+  const msgText = message.text
+  const msgEntities = message.entities
+  const reply = message.reply_to_message
+
+  if (!msgText || !msgEntities) return
+  const meta = extractMetadata(msgText, msgEntities) || []
+  const descriptions = msgText.split('\n-').map((d) => d.trim())
+
+  meta.forEach(async (rowIndex, i) => {
+    await writeRow(`C${rowIndex}`, [descriptions[i]], GSHEET_ID, SHEET_NAME)
+  })
+
+  await client.setMessageReaction(reply.chat.id, reply.message_id, [
+    { type: 'emoji', reaction: '🫡' },
+  ])
 }
 
 async function urlFlow(
@@ -107,10 +134,11 @@ async function urlFlow(
   let msg = `URLs stored in sheet: ???`
   urlArr.forEach((url) => (msg += `\n  - ${url}`))
   msg += '\n\nReply to this message to set a description for the links stored'
-  msg = embedMetadata([], msg)
 
   let lastRowIndex = await getLastRowIndex(GSHEET_ID, SHEET_NAME)
   const rowsToAppend = urlArr.map((url) => [lastRowIndex++, url])
+  const rowIndexes = rowsToAppend.map((row) => row[0])
+  msg = embedMetadata(rowIndexes, msg)
 
   await appendToSheet(rowsToAppend, 'A:B', GSHEET_ID, SHEET_NAME)
   return client.sendMessage(message.from?.id, msg)
@@ -145,4 +173,11 @@ export async function processTeleError(
       message: `Internal Server Error`,
     }),
   }
+}
+
+// -- Type Guards
+function hasReply(
+  msg: TeleMessage,
+): msg is TeleMessage & { reply_to_message: TeleMessage } {
+  return !!msg.reply_to_message
 }
