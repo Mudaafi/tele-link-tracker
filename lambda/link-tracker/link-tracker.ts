@@ -147,7 +147,7 @@ async function urlFlow(
     })
     .filter((url) => url !== null && url !== undefined)
 
-  let msg = `URLs stored in sheet: ???`
+  let msg = `URLs stored in sheet: <b><a href="https://docs.google.com/spreadsheets/d/169qZKbEAb5rMeyEHNNjA0fGxs0-atTEF60PDDT8U1gY/edit?gid=0#gid=0">Link Tracker</a></b>`
   urlArr.forEach((url) => (msg += `\n  - ${url}`))
   msg += '\n\nReply to this message to set a description for the links stored'
 
