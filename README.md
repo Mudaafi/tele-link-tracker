@@ -1,4 +1,4 @@
-# Telegram Bot to Track Links
+#Telegram Bot to Track Links
 
 ## Target Flows
 Flows which I want to set up
@@ -11,4 +11,3 @@ Flows which I want to set up
 
 ### Sheet Assignment
 We'll probably want to allow users to declare which sheet to set to
-1. 
